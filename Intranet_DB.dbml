@@ -1,0 +1,298 @@
+Project IntranetERP {
+  database_type: "SQLServer"
+}
+
+Table EnumLookup {
+	Name			varchar(80) [pk]
+	No				int 		[pk]
+	Code			varchar(20)
+	Description		varchar(256)
+	Disable			bool
+}
+
+records EnumLookup(name, no, code, description, disable) {
+	'Sex',1,'M','Maschio',false
+	'Sex',2,'F','Femmina',false
+	'Sex',3,'G','Giuridica',false
+	'ProjectEstimateOrActualLineType',1,'','Work',false
+	'ProjectEstimateOrActualLineType',2,'','Expense (res)',false
+	'ProjectEstimateOrActualLineType',3,'','Item',false
+	'ProjectEstimateOrActualLineType',4,'','Cost (zzs)',false
+}
+// ProjectEstimateOrActualLineType Expense is money paid by resource, Cost is money paid by ZZSoft
+
+
+Table AppUser {
+  AppUserId				int		[pk]
+  AppUserUId 			uuid 	[unique]
+  AppUserProvider		varchar	
+  Username		 		varchar [unique]
+  PasswordHash 			varchar
+  PasswordSecurityStamp	varchar
+  Disabled				bool
+  DisabledAt			datetime
+  DisabledBy			varchar		[ref: > AppUser.username]
+  Locked				bool
+  LockedAt				datetime
+  
+  Name					varchar(60)
+  Name2					varchar(60)
+  Email					varchar(255)
+  MobilePhone			varchar(20)
+  
+  RecordCreatedAt 		datetime
+  RecordCreatedBy		varchar		[ref: > AppUser.username]
+  RecordModifiedAt		datetime
+  RecordModifiedBy		varchar  	[ref: > AppUser.username]
+}
+
+records AppUser {
+	1,'10000000-0000-0000-0000-000000000001','LOCAL','NoUser','','',1,'1753-01-01','NoUser',0,'1753-01-01', 'No User','No User','','','1753-01-01','NoUser','1753-01-01','NoUser'
+}
+
+
+Table AppUserClaim {
+	AppUserClaimId		int					[pk]
+	AppUserId			int
+	ClaimURI			varchar(255)		[note: the uri of the role 'http://schemas.microsoft.com/ws/2008/06/identity/claims/role']
+	ClaimValue			varchar(255)		[note: the name of the role]
+}
+
+Table Employee {
+	EmployeeId				int			[pk]
+	EmployeeUId				uuid		[unique]
+
+	Name					varchar
+	Name2					varchar
+	FiscalCode				varchar
+	Sex						char	[ref: EnumLookup.Code AND EnumLookup.Name = 'Sex']
+	BirthDate				date
+	BirthCityOrCountry		varchar
+	Citizenship				char
+
+	AppUserId				int 		[ref: Employee.AppUserId > AppUser.AppUserId]
+
+	RecordRowVersion		rowversion	
+	RecordCreatedAt 		datetime
+	RecordCreatedBy			varchar		[ref: > AppUser.username]
+	RecordModifiedAt		datetime
+	RecordModifiedBy		varchar  	[ref: > AppUser.username]
+	RecordDeleted			bool
+	RecordDeletedBy			varchar  	[ref: > AppUser.username]
+	RecordDeletedAt			datetime	
+}
+
+Table Resource {
+	ResourceId				int			[pk]
+	ResourceUId				uuid		[unique]
+
+	Code					varchar
+	Nome					varchar
+
+	AppUserId				int			[ref: > AppUser.AppUserId]
+	EmployeeId				int			[ref: > Employee.EmployeeId]
+	RecordCreatedAt 		datetime
+	RecordCreatedBy			varchar		[ref: > AppUser.username]
+	RecordModifiedAt		datetime
+	RecordModifiedBy		varchar  	[ref: > AppUser.username]
+	RecordDeleted			bool
+	RecordDeletedBy			varchar  	[ref: > AppUser.username]
+	RecordDeletedAt			datetime
+}
+Table Customer {
+  CustomerId 			int [pk]
+  CustomerUId			uuid [unique]
+  Name 					varchar
+  Name2					varchar
+  VatCountry			varchar
+  VatNumber 			varchar
+  FiscalCode			varchar
+  Sex					char	[note: can be M or F for pearson, G for Company]
+  BirthDate				date
+  BirthCityOrCountry	varchar(100)
+  
+  Address				varchar
+  Address2				varchar
+  PostCode				varchar
+  City					varchar
+  Province				varchar
+  CountryCode			char
+  
+  Email 				varchar
+  MobilePhone 			varchar
+    
+  RecordCreatedAt 		datetime
+  RecordCreatedBy		varchar		[ref: > AppUser.username]
+  RecordModifiedAt		datetime
+  RecordModifiedBy		varchar  	[ref: > AppUser.username]
+  RecordDeleted			bool
+  RecordDeletedBy		varchar  	[ref: > AppUser.username]
+  RecordDeletedAt		datetime
+}
+
+
+Table Project {
+  ProjectId				int 		[pk]
+  ProjectUId 			uuid 		[unique]
+  CustomerId 			int 		[ref: > Customer.CustomerId]
+  
+  Code 					varchar
+  Name 					varchar
+  Description 			text
+  StartDate 			date
+  EndDate 				date
+  
+  WorkBaseUoM			char 		[note: H for Hours, D for Day]
+  WorkExpectedEffort    decimal
+  WorkEffort			decimal
+  
+  RecordCreatedAt 		datetime
+  RecordCreatedBy		varchar		[ref: > AppUser.username]
+  RecordModifiedAt		datetime
+  RecordModifiedBy		varchar  	[ref: > AppUser.username]
+  RecordDeleted			bool
+  RecordDeletedBy		varchar  	[ref: > AppUser.username]
+  RecordDeletedAt		datetime
+}
+
+Table ProjectEstimate {
+	EstimateLineId		int 		[pk]
+	ProjectId			int			[ref: > Project.ProjectId
+	BudgetNo			int
+	LineType			int			[note: 1 Work, 2 Expense, 3 Item, 4 Cost]
+	Description			varchar
+	Quantity			decimal
+	UnitOfMeasure		varchar
+	UnitCost			decimal
+	UnitPrice			decimal
+
+	RecordCreatedAt 	datetime
+	RecordCreatedBy		varchar		[ref: > AppUser.username]
+
+}
+
+ProjectActual {
+	ProjectId			int			[ref: > Project.ProjectId
+	LineType			int			[note: 1 Work, 2 Expense, 3 Item, 4 Cost]
+	ResourceCode		varchar
+	
+	Date				date
+	Description			varchar
+	
+	Quantity			decimal
+	UnitOfMeasure		varchar
+	UnitCost			decimal\
+	UnitPrice			decimal
+	
+	
+	RecordCreatedAt 	datetime
+	RecordCreatedBy		varchar		[ref: > AppUser.username]
+}
+
+
+/////////////////////////////////////////////////////
+//// ACCOUNTING
+/////////////////////////////////////////////////////
+Table FiscalYear {
+  FiscalYear		 	int [pk]
+  StartDate 			date
+  EndDate 				date
+  Closed 				bool
+}
+
+
+
+Table Account {
+	AccountId	int [Pk]
+	AccountUId uuid [unique]
+
+	Code varchar 	[unique]
+	Description varchar
+
+	ParentAccountId int [ref: > Accounts.AccountId]
+
+	Level int
+	
+	IsLeaf			bool
+	AllowPosting 	bool
+
+	AccountArea		int
+
+
+
+}
+
+
+Table GeneralLedgerEntry {
+	GeneralLedgerEntryId		int		[PK]
+	FiscalYear					int		
+	TransactionNo				int
+	Date 						date
+	PostDate					date
+ 	Description 				text
+	DocumentCode				varchar(50)
+	Posted						bool	
+	RecordCreatedAt 			datetime
+	RecordCreatedBy				varchar		[ref: > AppUser.username]
+
+}
+
+Table GeneralLedgerEntryLine {
+
+  GeneralLedgerEntryId		int				[PK] [ref: > GeneralLedgerEntry.GeneralLedgerEntryId]
+  AccountId					int				[pk] [ref: > Accounts.AccountId]
+  Amount					decimal		   	[note: Positive number are Debit, Negative number are Credit
+}
+
+Table PaymentSystems {
+
+	PaymentSystemId				int 			[pk]
+	PaymentSystemUId 			uuid 			[unique]
+	
+	ShortName 					varchar(60) 	[unique]
+	Description 				varchar(1000) 
+	Type 						int				[note: the possible value are in the EnumLookup table in the No field WHERE Name = 'PaymentSystemType'. All the possible value are SELECT M0,Description FROM EnumLookup WHERE Name = 'PaymentSystemType']
+	Currency 					char(3)
+	IBAN 						varchar(40)
+	BankName 					varchar(80)
+	BankBranch					varchar(80)
+	
+	CardHolder 					varchar(20)
+
+	RecordCreatedAt 			datetime
+	RecordCreatedBy				varchar		[ref: > AppUser.username]
+	RecordModifiedAt			datetime
+	RecordModifiedBy			varchar  	[ref: > AppUser.username]
+	RecordDeleted				bool
+	RecordDeletedBy				varchar  	[ref: > AppUser.username]
+	RecordDeletedAt				datetime
+
+}
+
+Table PaymentSystemEntry {
+
+  PaymentSystemEntryId			int				[pk]
+  PaymentSystemId 				int 			[ref: > PaymentSystems.PaymentSystemId]
+  Date 							date
+  ValueDate						date
+  Description					varchar(1000)	
+  Amount 						decimal
+}
+
+// Cespiti
+Table Asset {
+	AssetId 					int		 		[pk]
+	AssetUId					uuid			[unique]
+	Code						varchar(20)
+	Name						varchar(1000)
+	SellerName					varchar(80)
+	SellerName2					varchar(60)
+	SellerVatCountry			char(2)
+	SellerVatNumber				varchar(40)
+	SellerFiscalCode			varchar(20)
+	SellerFromSex				char(1)
+	SellerDocNumber				varchar(20)
+	SellerdocDate				date
+	SellerDocType				varchar(20)
+	PurchaseValue				decimal
+}
